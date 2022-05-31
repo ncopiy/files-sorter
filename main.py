@@ -16,11 +16,12 @@ def get_target_path(destination, entry) -> str:
 def main(paths: List[str], destination: str) -> None:
     path_to_existed = {}
 
-    count = len(paths)
     for i, path in enumerate(paths):
-        print(count - i, path)
-        
         for entry in os.scandir(path):
+            if entry.is_dir():
+                paths.append(entry.path)
+                continue
+            
             target = get_target_path(destination, entry)
 
             if target not in path_to_existed:
