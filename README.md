@@ -1,8 +1,8 @@
 # Files Sorter
 
-Copies sorted by timestamp files from source directories to destination directory
+Copies files from source directories to destination directory and sorts it by timestamp
 
-Example of expexted result:
+Example of expected result:
 
 ```
 destination/
