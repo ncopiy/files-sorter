@@ -18,12 +18,16 @@ def get_target_path(destination, entry) -> str:
     return os.path.join(destination, ts.strftime("%Y"), ts.strftime("%m"), ts.strftime("%d"))
 
 
+def printdt(content: str) -> None:
+    print(f"{datetime.now()}: {content}")
+
+
 def main(paths: List[str], destination: str) -> None:
     path_to_existed = {}
+    path_to_failed = {}
 
     total = 0
 
-    failed = []
     for i, path in enumerate(paths):
         files_count = 0
         dirs_count = 0
@@ -34,12 +38,12 @@ def main(paths: List[str], destination: str) -> None:
             else:
                 files_count += 1
 
-        print(f"{datetime.now()} Processing {i + 1}/{len(paths)} directory '{path}' with {files_count} files and {dirs_count} dirs")
+        printdt(f"Processing {i + 1}/{len(paths)} dir '{path}' with {files_count} files and {dirs_count} dirs")
 
         total += files_count
 
         for j, entry in enumerate(os.scandir(path)):
-            print(f"{j + 1}/{files_count + dirs_count}")
+            printdt(f"{j + 1}/{files_count + dirs_count}")
 
             if entry.is_dir():
                 paths.append(entry.path)
@@ -61,14 +65,25 @@ def main(paths: List[str], destination: str) -> None:
             try:
                 shutil_copy(source, target_with_name)
             except OSError as e:
-                failed.append((source, target_with_name))
+                if target not in path_to_failed:
+                    path_to_failed[target] = []
+                path_to_failed[target].append((source, e))
+                try:
+                    # clean up failed file
+                    os.remove(target_with_name)
+                except FileNotFoundError:
+                    pass
 
-    print(f"{datetime.now()} Processed {total} files")
-    if len(failed) > 0:
-        print(f"failed:\n{'\n'.join(f'{s[0]} {s[1]}' for s in failed)}")
+    printdt(f"Processed {total} files")
+    if len(path_to_failed) > 0:
+        print("Some files have been failed to copy")
+        for path, failed in path_to_failed.items():
+            print(f"Failed copy to path {path}:")
+            for f in failed:
+                print(f[0], f[1])
 
 
 if __name__ == '__main__':
-    print(f"START {datetime.now()}")
+    printdt("START")
     main(paths=SOURCES, destination=DESTINATION)
-    print(f"END {datetime.now()}")
+    printdt("END")
