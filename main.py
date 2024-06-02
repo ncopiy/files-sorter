@@ -9,13 +9,12 @@ SOURCES = [
     "/my/source/dir"
 ]
 
-DESTINATION = "/my/destination/dir"
+DESTINATION = "sorted"
 
 
 def get_target_path(destination, entry) -> str:
     stat = entry.stat()
     ts = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
-
     return os.path.join(destination, ts.strftime("%Y"), ts.strftime("%m"), ts.strftime("%d"))
 
 
@@ -24,6 +23,7 @@ def main(paths: List[str], destination: str) -> None:
 
     total = 0
 
+    failed = []
     for i, path in enumerate(paths):
         files_count = 0
         dirs_count = 0
@@ -44,7 +44,7 @@ def main(paths: List[str], destination: str) -> None:
             if entry.is_dir():
                 paths.append(entry.path)
                 continue
-            
+
             target = get_target_path(destination, entry)
             target_with_name = os.path.join(target, entry.name)
 
@@ -58,9 +58,14 @@ def main(paths: List[str], destination: str) -> None:
 
             source = os.path.join(path, entry.name)
 
-            shutil_copy(source, target_with_name)
+            try:
+                shutil_copy(source, target_with_name)
+            except OSError as e:
+                failed.append((source, target_with_name))
 
     print(f"{datetime.now()} Processed {total} files")
+    if len(failed) > 0:
+        print(f"failed:\n{'\n'.join(f'{s[0]} {s[1]}' for s in failed)}")
 
 
 if __name__ == '__main__':
